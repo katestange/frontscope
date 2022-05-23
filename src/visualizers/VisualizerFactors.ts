@@ -1,11 +1,6 @@
 import p5 from 'p5'
 import {VisualizerDefault} from './VisualizerDefault'
-import {
-    VisualizerParamsSchema,
-    VisualizerExportModule,
-} from './VisualizerInterface'
-import {ParamType} from '@/shared/ParamType'
-import {ValidationStatus} from '@/shared/ValidationStatus'
+import {VisualizerExportModule} from './VisualizerInterface'
 
 // p5 factor Visualizer colour palette class
 class factorPalette {
@@ -37,37 +32,31 @@ class factorPalette {
     }
 }
 
-// params schema
-const schemaFactors = [
-    new VisualizerParamsSchema(
-        'terms',
-        ParamType.number,
-        'Number of terms',
-        true,
-        10000,
-        'The number of terms to show.'
-    ),
-    new VisualizerParamsSchema(
-        'highlightPrime',
-        ParamType.number,
-        'Highlight prime',
-        true,
-        2,
-        'The prime number to highlight.'
-    ),
-]
-
 class VisualizerFactors extends VisualizerDefault {
     name = 'Factors';
-    params = schemaFactors;
+
+    private terms = 10000;
+    private highlightPrime = 0;
+    params = {
+        terms: { 
+            value: this.terms,
+            forceType: 'integer',
+            displayName: 'Number of terms',
+            required: true,
+            description: 'The number of terms to graph.'
+        },
+        highlightPrime: {
+            value: this.highlightPrime,
+            forceType: 'integer',
+            displayName: 'Highlighted prime',
+            required: false,
+            description: 'The prime number to highlight (if 0 or not a prime, no highlight will be shown).'
+        },
+    }
 
     // we need access to the HTML5 when we implement gradients
     // which may look something like this
     // private canvas = document.getElementById('canvas');
-
-    // private properly typed versions of the user parameters
-    private terms = 0;
-    private highlightPrime = 0;
 
     // current state variables used in setup and draw
     private palette = new factorPalette(this.sketch)
@@ -86,33 +75,18 @@ class VisualizerFactors extends VisualizerDefault {
     private textSize = 0
 
 
-    validate() {
-        this.assignParams()
-        this.isValid = false
+    checkParameters() {
+        const status = super.checkParameters()
 
-        // properly typed private versions of parameters
-        this.terms = Number(this.settings.terms)
-        this.highlightPrime = Number(this.settings.highlightPrime)
-
-        // validation checks
-        const validationMessages: string[] = []
-        if (!Number.isInteger(this.terms) || this.terms < 1) {
-            validationMessages.push(
+        const p = this.params
+        if (p.terms.value < 1) {
+            status.errors.push(
                 'The number of terms must be an integer > 0.'
             )
         }
-        if (!Number.isInteger(this.highlightPrime) || this.terms < 2) {
-            validationMessages.push(
-                'The highlighted prime must be an integer > 1.'
-            )
-        }
 
-        if (validationMessages.length > 0) {
-            return new ValidationStatus(false, validationMessages)
-        }
-
-        this.isValid = true
-        return new ValidationStatus(true)
+        if (status.errors.length > 0) status.isValid = false
+        return status
     }
 
     barsShowing() {
