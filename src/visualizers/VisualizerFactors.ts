@@ -78,8 +78,7 @@ class VisualizerFactors extends VisualizerDefault {
     checkParameters() {
         const status = super.checkParameters()
 
-        const p = this.params
-        if (p.terms.value < 1) {
+        if (this.params.terms.value < 1) {
             status.errors.push(
                 'The number of terms must be an integer > 0.'
             )
@@ -135,7 +134,10 @@ class VisualizerFactors extends VisualizerDefault {
         // collect some info on the sequence in order to decide
         // how best to show the initial graph
         const barsInfo = this.barsShowing()
-        const seqVals = Array.from(Array(barsInfo.numBars), (_,i) => Number(this.seq.getElement(i+barsInfo.minBars)))
+        const seqVals = Array.from(
+            Array(barsInfo.numBars), 
+            (_,i) => Number(this.seq.getElement(i+barsInfo.minBars))
+        )
         const maxVal = Math.max.apply(Math, seqVals)
         const minVal = Math.min.apply(Math, seqVals)
 
@@ -185,7 +187,9 @@ class VisualizerFactors extends VisualizerDefault {
             // const facsRaw = mockFactors();
             
             // meanwhile, if we want slow trial division factoring:
-            const facsRaw = slowFactors(Math.abs(Number(this.seq.getElement(myIndex))));
+            const facsRaw = slowFactors(
+                Math.abs(Number(this.seq.getElement(myIndex)))
+            );
             
             // change the factors into just a list of factors with repeats
             // format: [prime, log(prime)] 
@@ -252,7 +256,11 @@ class VisualizerFactors extends VisualizerDefault {
         const barsInfo = this.barsShowing()
         
         // loop through the terms of the seq
-        for( let myIndex = barsInfo.minBars; myIndex < barsInfo.maxBars; myIndex++ ){ 
+        for( 
+            let myIndex = barsInfo.minBars; 
+            myIndex < barsInfo.maxBars; 
+            myIndex++ 
+           ){ 
 
             let mySign = 1
             if( this.seq.getElement(myIndex) < 0 ){
@@ -300,9 +308,11 @@ class VisualizerFactors extends VisualizerDefault {
                             = this.sketch.createVector(0, -cumulHt)
                         barStart.add(moveOver)
                         barStart.add(moveUp)
-                        const barDiag = this.sketch.createVector(this.recWidth, recHeight)
+                        const barDiag = this.sketch.createVector(
+                            this.recWidth, 
+                            recHeight
+                        )
                         // draw the rectangle
-                        //console.log("then", barStart.x, barStart.y)
                         this.grad_rect( 
                             barStart.x, 
                             barStart.y, 
@@ -347,7 +357,7 @@ class VisualizerFactors extends VisualizerDefault {
                 = this.sketch.createVector(0, this.textInterval)
             textIntervalVec.mult(1/this.scaleFactor);
             const info = [
-                "Click select; J/L pan; I/K zoom; U/O stretch",
+                "Click select; J/L pan; I/K zoom; U/O stretch; Y/H raise/lower",
                 "Highlighted prime: " + this.highlightPrime.toString(),
             ];
             const infoColors = [
@@ -427,7 +437,9 @@ class VisualizerFactors extends VisualizerDefault {
         ) {
             // once we have drawing context, we can do something like
             // let barGradient 
-            //     = this.sketch.drawingContext.createLinearGradient(x, y, x, y+height);
+            //     = this.sketch.drawingContext.createLinearGradient(
+            //          x, y, x, y+height
+            //     );
             // barGradient.addColorStop(0, color1);
             // barGradient.addColorStop(1, color2);
             // this.sketch.drawingContext.fillStyle = barGradient;
