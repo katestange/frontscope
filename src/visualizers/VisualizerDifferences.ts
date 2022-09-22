@@ -1,23 +1,42 @@
-import {SequenceInterface} from '@/sequences/SequenceInterface'
+import type {SequenceInterface} from '../sequences/SequenceInterface'
 import {VisualizerExportModule} from '@/visualizers/VisualizerInterface'
-import p5 from 'p5'
+import type p5 from 'p5'
 import {VisualizerDefault} from './VisualizerDefault'
 
 const min = Math.min
 
-class VizDifferences extends VisualizerDefault {
+/** md
+# Difference Visualizer
+
+(example image should go here)
+
+This is a very simple visualizer that just prints a row of values from
+the sequence, and below that, between each two terms, their difference.
+It can continue this process, adding rows that indicate differences
+between the terms in the row above, for as many rows as you like.
+
+## Parameters
+**/
+
+class VisualizerDifferences extends VisualizerDefault {
     name = 'Differences'
 
     n = 20
     levels = 5
 
     params = {
+        /** md
+- n: The number of terms of the sequence to display in the top row.
+         **/
         n: {
             value: this.n,
             forceType: 'integer',
             displayName: 'Elements in top row',
             required: true,
         },
+        /** md
+- levels: The number of rows to produce. Cannot be larger than n.
+         **/
         levels: {
             value: this.levels,
             forceType: 'integer',
@@ -92,8 +111,8 @@ class VizDifferences extends VisualizerDefault {
                     firstY + i * yDelta
                 )
                 if (j < workingSequence.length - 1) {
-                    workingSequence[j]
-                        = workingSequence[j + 1] - workingSequence[j]
+                    workingSequence[j] =
+                        workingSequence[j + 1] - workingSequence[j]
                 }
             }
 
@@ -111,7 +130,7 @@ class VizDifferences extends VisualizerDefault {
 
 export const exportModule = new VisualizerExportModule(
     'Differences',
-    VizDifferences,
+    VisualizerDifferences,
     'Produces a table of differences between consecutive terms, '
         + 'potentially iterated several times.'
 )

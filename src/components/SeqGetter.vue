@@ -4,26 +4,25 @@
     </a>
 </template>
 
-<script>
-    export default {
+<script lang="ts">
+    import {defineComponent} from 'vue'
+    export default defineComponent({
         name: 'SeqGetter',
         props: {
             title: String,
             instanceId: String,
         },
-    }
+    })
 </script>
 
 <style scoped>
     a {
         cursor: pointer;
     }
-
     li:hover {
-        background-color: #809fff;
-        color: #ffffff;
+        color: var(--ns-navigation-foreground);
+        background-color: var(--ns-navigation-background);
     }
-
     li {
         text-align: left;
     }

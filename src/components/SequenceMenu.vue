@@ -6,14 +6,14 @@
                 v-for="seq in isGetter(sequences, false)"
                 v-bind:title="seq.name"
                 v-bind:isInstance="seq.kind == instanceKind"
-                v-bind:key="seq.id"
+                v-bind:key="seq.name"
                 v-on:set-seq-params="setParams(seq)"
                 v-on:stage-instance="createSeq(true, seq)" />
             <hr />
             <SeqGetter
                 v-for="seq in isGetter(sequences, true)"
                 v-bind:title="seq.name"
-                v-bind:key="seq.id"
+                v-bind:key="seq.name"
                 v-on:load-seq="loadSeq(seq)" />
         </ul>
         <SeqVizParamsModal
@@ -28,24 +28,29 @@
 </template>
 
 <script lang="ts">
-    import Vue from 'vue'
-    import SeqSelector from '@/components/SeqSelector.vue'
-    import SeqGetter from '@/components/SeqGetter.vue'
-    import SeqVizParamsModal from '@/components/SeqVizParamsModal.vue'
-    import {
+    import {defineComponent} from 'vue'
+    import type {PropType} from 'vue'
+    import SeqSelector from './SeqSelector.vue'
+    import SeqGetter from './SeqGetter.vue'
+    import SeqVizParamsModal from './SeqVizParamsModal.vue'
+    import type {
         SequenceInterface,
         SequenceConstructor,
+    } from '../sequences/SequenceInterface'
+    import {
         SequenceExportModule,
         SequenceExportKind,
-    } from '@/sequences/SequenceInterface.ts'
-    import {SequenceClassDefault} from '@/sequences/SequenceClassDefault.ts'
-
-    export default Vue.extend({
+    } from '../sequences/SequenceInterface'
+    import {SequenceClassDefault} from '../sequences/SequenceClassDefault'
+    export default defineComponent({
         name: 'SequenceMenu',
         props: {
-            sequences: Array,
+            sequences: {
+                type: Array as PropType<SequenceExportModule[]>,
+                required: true,
+            },
             activeViz: Object,
-            activeSeq: Object,
+            activeSeq: Object as PropType<SequenceInterface | null>,
         },
         components: {
             SeqSelector,
@@ -63,8 +68,8 @@
                 if (seq.kind == SequenceExportKind.INSTANCE) {
                     this.$emit('createSeq', this.liveSequence)
                 } else {
-                    const constructor
-                        = seq.constructorOrSequence as SequenceConstructor
+                    const constructor =
+                        seq.constructorOrSequence as SequenceConstructor
                     this.liveSequence = new constructor(this.sequences.length)
                     this.openParamsModal()
                 }
@@ -79,8 +84,8 @@
                 )
             },
             loadSeq: function (seq: SequenceExportModule) {
-                const constructor
-                    = seq.constructorOrSequence as SequenceConstructor
+                const constructor =
+                    seq.constructorOrSequence as SequenceConstructor
                 this.liveSequence = new constructor(this.sequences.length)
                 this.loadingInstance = true
                 this.openParamsModal()
@@ -92,8 +97,8 @@
                 console.log(activeSeq)
                 if (isInstance) {
                     // instances are already constructed
-                    this.liveSequence
-                        = activeSeq.constructorOrSequence as SequenceInterface
+                    this.liveSequence =
+                        activeSeq.constructorOrSequence as SequenceInterface
                 }
                 const validationResult = this.liveSequence.validate()
                 if (validationResult.isValid) {

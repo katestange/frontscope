@@ -1,14 +1,30 @@
-import {SequenceInterface} from '@/sequences/SequenceInterface'
-import {VisualizerDefault} from '@/visualizers/VisualizerDefault'
-import {
-    VisualizerInterface,
-    VisualizerExportModule,
-} from '@/visualizers/VisualizerInterface'
+import type {SequenceInterface} from '../sequences/SequenceInterface'
+import {VisualizerDefault} from '../visualizers/VisualizerDefault'
+import type {VisualizerInterface} from '@/visualizers/VisualizerInterface'
+import {VisualizerExportModule} from '@/visualizers/VisualizerInterface'
+
+/** md
+# Mod Fill Visualizer
+
+[image should go here]
+
+The _n_-th row of this triangular diagram has _n_ cells which are turned on
+or off according to whether the corresponding residue modulo _n_ occurs for
+some entry of the sequence. The entries are considered in order, filling the
+corresponding cells in turn, so you can get an idea of when various residues
+occur by watching the order the cells are filled in as the diagram is drawn.
+
+## Parameters
+**/
 
 class VizModFill extends VisualizerDefault implements VisualizerInterface {
     name = 'Mod Fill'
     modDimension = 10n
     params = {
+        /** md
+- modDimension: The number of rows to display, which corresponds to the largest
+    modulus to consider.
+         **/
         modDimension: {
             value: this.modDimension,
             displayName: 'Mod dimension',
@@ -38,8 +54,8 @@ class VizModFill extends VisualizerDefault implements VisualizerInterface {
         for (let mod = 1n; mod <= this.modDimension; mod++) {
             const s = seq.getElement(num)
             const x = Number(mod - 1n) * this.rectWidth
-            const y
-                = this.sketch.height - Number((s % mod) + 1n) * this.rectHeight
+            const y =
+                this.sketch.height - Number((s % mod) + 1n) * this.rectHeight
             this.sketch.rect(x, y, this.rectWidth, this.rectHeight)
         }
     }

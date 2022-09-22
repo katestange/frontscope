@@ -14,7 +14,7 @@
                     class="alert alert-warning">
                     Select a sequence
                 </div>
-                <div v-else class="alert alert-primary">
+                <div v-else class="alert ready">
                     Active sequence: {{ activeSeq.name }}
                 </div>
             </div>
@@ -26,21 +26,21 @@
                     class="alert alert-warning">
                     Select a visualizer
                 </div>
-                <div v-else class="alert alert-primary">
+                <div v-else class="alert ready">
                     Active visualizer: {{ activeViz.name }}
                 </div>
             </div>
         </div>
         <button
             v-if="readyToBundle"
-            class="btn btn-primary"
+            class="btn nsnav"
             v-on:click="$emit('createBundle')">
             Create Bundle
         </button>
         <div class="row">
             <BundleCard
                 v-for="bundle in bundles"
-                v-bind:key="bundle.uid"
+                v-bind:key="bundle.seq.name + bundle.viz.name"
                 v-bind:seq="bundle.seq"
                 v-bind:viz="bundle.viz"
                 v-on:drawBundle="$emit('drawBundle', $event)" />
@@ -57,17 +57,30 @@
 </template>
 
 <script lang="ts">
-    import Vue from 'vue'
-    import BundleCard from '@/components/bundleCard.vue'
-
-    export default Vue.extend({
+    import {defineComponent} from 'vue'
+    import type {PropType} from 'vue'
+    import type {VisualizerInterface} from '../visualizers/VisualizerInterface'
+    import type {SequenceInterface} from '../sequences/SequenceInterface'
+    import BundleCard from './BundleCard.vue'
+    export default defineComponent({
         components: {
             BundleCard,
         },
         props: {
-            activeSeq: Object,
-            activeViz: Object,
-            bundles: Array,
+            activeSeq: {
+                type: [null, Object] as PropType<SequenceInterface | null>,
+                required: true,
+            },
+            activeViz: {
+                type: [null, Object] as PropType<VisualizerInterface | null>,
+                required: true,
+            },
+            bundles: Array as PropType<
+                {
+                    seq: SequenceInterface
+                    viz: VisualizerInterface
+                }[]
+            >,
         },
         computed: {
             readyToBundle: function (): boolean {
@@ -81,3 +94,17 @@
         },
     })
 </script>
+
+<style scoped>
+    .ready {
+        color: var(--ns-information-foreground);
+        background-color: var(--ns-information-background);
+    }
+    .nsnav {
+        border-color: var(--ns-information-background);
+    }
+    .nsnav:hover {
+        color: var(--ns-navigation-foreground);
+        background-color: var(--ns-navigation-background);
+    }
+</style>

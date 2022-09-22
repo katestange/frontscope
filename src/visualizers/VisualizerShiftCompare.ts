@@ -1,9 +1,21 @@
 import p5 from 'p5'
 import {VisualizerDefault} from './VisualizerDefault'
-import {
-    VisualizerInterface,
-    VisualizerExportModule,
-} from './VisualizerInterface'
+import type {VisualizerInterface} from '@/visualizers/VisualizerInterface'
+import {VisualizerExportModule} from '@/visualizers/VisualizerInterface'
+
+/** md
+# Shift Compare Visualizer
+
+[image should go here]
+
+This visualizer creates an image whose width and height are the number of
+entries in the sequence or the dimensions of the visualizer canvas, whichever
+is smaller. Each pixel of the image is colored white if using its coordinates
+as indices into the sequence, the two entries are congruent (in the given
+modulus). The pixel is colored black otherwise.
+
+## Parameters
+**/
 
 // CAUTION: This is unstable with some sequences
 // Using it may crash your browser
@@ -12,9 +24,12 @@ class VizShiftCompare
     implements VisualizerInterface
 {
     name = 'Shift Compare'
-    private img: p5.Image = new p5.Image()
+    private img: p5.Image = new p5.Image(1, 1) // just a dummy
     mod = 2n
     params = {
+        /** md
+- mod: The modulus to use when comparing entries.
+         **/
         mod: {
             value: this.mod,
             displayName: 'Modulo',
@@ -89,10 +104,10 @@ class VizShiftCompare
                 const yEl = this.seq.getElement(y)
                 for (let i = 0; i < d; i++) {
                     for (let j = 0; j < d; j++) {
-                        const index
-                            = 4
-                            * ((y * d + j) * this.sketch.width * d
+                        const index =
+                            ((y * d + j) * this.sketch.width * d
                                 + (x * d + i))
+                            * 4
                         if (xEl % this.mod == yEl % this.mod) {
                             this.img.pixels[index] = 255
                             this.img.pixels[index + 1] = 255

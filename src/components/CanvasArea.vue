@@ -12,18 +12,26 @@
 </template>
 
 <script lang="ts">
-    import Vue from 'vue'
+    import {defineComponent} from 'vue'
+    import type {PropType} from 'vue'
+    import type {VisualizerInterface} from '../visualizers/VisualizerInterface'
+    import type {SequenceInterface} from '../sequences/SequenceInterface'
     import p5 from 'p5'
-    import StopDrawingButton from '@/components/StopDrawingButton.vue'
-
-    export default Vue.extend({
+    import StopDrawingButton from './StopDrawingButton.vue'
+    export default defineComponent({
         name: 'CanvasArea',
         components: {
             StopDrawingButton,
         },
         props: {
-            activeSeq: Object,
-            activeViz: Object,
+            activeSeq: {
+                type: Object as PropType<SequenceInterface>,
+                required: true,
+            },
+            activeViz: {
+                type: Object as PropType<VisualizerInterface>,
+                required: true,
+            },
         },
         methods: {
             closeCanvas: function (): void {
@@ -32,29 +40,20 @@
             },
         },
         mounted: function (): void {
-            console.log('Drawing with Visualizer: ', this.activeViz.name)
-            console.log('Drawing with Sequence', this.activeSeq.name)
-
-            // params here are ID and finite
             const activeSeq = this.activeSeq
             activeSeq.initialize()
-
             const activeViz = this.activeViz
-
             this.drawing = new p5(function (sketch) {
                 activeViz.initialize(sketch, activeSeq)
-
                 sketch.setup = function () {
                     sketch.createCanvas(800, 800)
                     sketch.background('white')
                     activeViz.setup()
                 }
-
                 sketch.draw = function () {
                     activeViz.draw()
                 }
             }, document.getElementById('p5-goes-here') as HTMLElement)
-
             this.drawing.setup()
             this.drawing.draw()
         },

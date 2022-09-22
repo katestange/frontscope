@@ -1,4 +1,4 @@
-import {ValidationStatus} from '@/shared/ValidationStatus'
+import type {ValidationStatus} from '../shared/ValidationStatus'
 import {SequenceExportModule, SequenceExportKind} from './SequenceInterface'
 import {SequenceCached} from './SequenceCached'
 
@@ -43,8 +43,8 @@ export default class OEISSequenceTemplate extends SequenceCached {
     }
 
     async fillCache(): Promise<void> {
-        const backendUrl
-            = `http://${process.env.VUE_APP_API_URL}/api/`
+        const backendUrl =
+            `http://${import.meta.env.VITE_API_URL}/api/`
             + `get_oeis_values/${this.oeisId}/${this.cacheBlock}`
         const response = await axios.get(backendUrl)
         this.first = Infinity

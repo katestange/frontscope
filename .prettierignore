@@ -1,2 +1,17 @@
+*.el
+*.ico
+*.jpg
+*.png
+*.ttf
+*.txt
+*.generator
+*~
+.gitignore
+.husky
+.prettierignore
+.vscode
+coverage
 dist
 node_modules
+package-lock.json
+site

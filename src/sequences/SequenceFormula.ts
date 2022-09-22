@@ -26,7 +26,7 @@ class SequenceFormula extends SequenceCached {
 
     /**
      *Creates an instance of SequenceFormula
-     * @param {*} sequenceID the sequence identifer of the sequence
+     * @param {*} sequenceID the sequence identifier of the sequence
      */
     constructor(sequenceID: number) {
         super(sequenceID)
@@ -41,12 +41,12 @@ class SequenceFormula extends SequenceCached {
         let parsetree = undefined
         try {
             parsetree = math.parse(this.params.formula.value)
-        } catch (err) {
+        } catch (err: unknown) {
             status.isValid = false
             status.errors.push(
                 'Could not parse formula: ' + this.params.formula.value
             )
-            status.errors.push(err.message)
+            status.errors.push((err as Error).message)
             return status
         }
         const othersymbs = parsetree.filter(
@@ -59,9 +59,7 @@ class SequenceFormula extends SequenceCached {
             status.isValid = false
             status.errors.push(
                 "Only 'n' may occur as a free variable in formula.",
-                "Please remove '"
-                    + (othersymbs[0] as math.SymbolNode).name
-                    + "'"
+                `Please remove '${(othersymbs[0] as math.SymbolNode).name}'`
             )
         }
         this.evaluator = parsetree.compile()

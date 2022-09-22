@@ -1,5 +1,5 @@
-import {SequenceInterface} from './SequenceInterface'
-import {Paramable} from '@/shared/Paramable'
+import type {SequenceInterface} from './SequenceInterface'
+import {Paramable} from '../shared/Paramable'
 
 /**
  *
