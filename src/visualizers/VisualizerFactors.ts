@@ -179,24 +179,16 @@ class VisualizerFactors extends VisualizerDefault {
 
         // we need a 2d context for gradients in p5
         // eventually do something like this:
-        // var facContext = this.sketch.elt.getContext('2d');
+        //var facContext = this.sketch.elt.getContext('2d');
+        const facContext = this.sketch.drawingContext
 
         // put all factorizations into an array for easy access
         this.factorizations = []
         for (let myIndex = this.first; myIndex < this.last; myIndex++) {
-            // after sequence interface is updated to include
-            // the ability to return factors, this should become
             const facsRaw = this.seq.getFactors(myIndex)
 
-            // meanwhile, if we want to use random factors use this:
-            // const facsRaw = mockFactors();
-
-            // meanwhile, if we want slow trial division factoring:
-            //const facsRaw = slowFactors(
-            //   Math.abs(Number(this.seq.getElement(myIndex)))
-            //)
-
             // change the factors into just a list of factors with repeats
+            // suitable for looping through the make the bars
             // format: [prime, log(prime)]
             const factors: bar[] = []
             if (facsRaw) {
@@ -459,23 +451,20 @@ class VisualizerFactors extends VisualizerDefault {
         color2: p5.Color
     ) {
         // once we have drawing context, we can do something like
-        // let barGradient
-        //     = this.sketch.drawingContext.createLinearGradient(
-        //          x, y, x, y+height
-        //     );
-        // barGradient.addColorStop(0, color1);
-        // barGradient.addColorStop(1, color2);
-        // this.sketch.drawingContext.fillStyle = barGradient;
-        const mySign = -height / Math.abs(height)
-        this.sketch.fill(color1)
-        this.sketch.rect(x, y - 10 * mySign, width, 10 * mySign)
-        this.sketch.fill(color2)
-        this.sketch.rect(
+        const barGradient = this.sketch.drawingContext.createLinearGradient(
             x,
-            y - height + 10 * mySign,
-            width,
-            height - 10 * mySign
+            y,
+            x,
+            y - height
         )
+        barGradient.addColorStop(0, color1)
+        barGradient.addColorStop(1, color2)
+        this.sketch.drawingContext.fillStyle = barGradient
+        const mySign = -height / Math.abs(height)
+        //this.sketch.fill(color1)
+        //this.sketch.rect(x, y - 10 * mySign, width, 10 * mySign)
+        //this.sketch.fill(color2)
+        this.sketch.rect(x, y - height, width, height)
     }
 }
 
