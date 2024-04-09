@@ -1,4 +1,7 @@
-# Numberscope onboarding
+# Onboarding
+
+This doc was originally meant for students, but it can also be used by
+contributors.
 
 ## A note on commands
 
@@ -19,8 +22,9 @@ Boulder Experimental Mathematics Lab.)
 
 1. If you don't have one, install a good text editor. Use whatever you want!
    [Visual Studio Code](https://code.visualstudio.com/) is popular, and it
-   works well with our code base. If you want to use Visual Studio Code,
-   install the following extensions:
+   works well with Vue, our front-end framework. However, there isn't a
+   specific text editor or IDE we recommend. If you want to use Visual Studio
+   Code, install the following extensions:
 
     - Code Spell Checker
     - TypeScript Vue Plugin (Volar)
@@ -55,7 +59,7 @@ Boulder Experimental Mathematics Lab.)
    code. I like to put a directory called `Code` in my home directory. You can
    call this whatever you want.
 7. If you plan to submit new code to become part of Numberscope at some time
-   in the future, it is best to "fork" (make your own copy of) the repository:
+   in the future, _you must_ "fork" (make your own copy of) the repository:
     - Go to https://github.com/numberscope/frontscope.
     - Click the "Fork" button (in the upper right as of this writing) and then
       follow the instructions GitHub provides. You need to create the fork on
@@ -87,9 +91,11 @@ Boulder Experimental Mathematics Lab.)
     ```
     This should print a link that you can open in the browser. Open it and see
     if Numberscope seems to be working.
-10. Finally, before you start changing code, please read the
-    [doc on submitting pull requests](./submitting-pull-requests.md) (it
-    outlines how to submit your code changes).
+10. If you plan on contributing code to Numberscope, _you must_ work in your
+    fork on a dedicated feature branch. To learn how to create a branch, see
+    [this doc](./working-with-git-and-github.md#create-a-branch).
+11. Finally, before you start changing code, please read
+    [our docs on submitting a pull request](../CONTRIBUTING.md#submit-a-pull-request).
 
 See [the doc on running from source](./running-from-source.md) for more
 information.

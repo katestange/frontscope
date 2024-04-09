@@ -41,7 +41,7 @@
         SequenceExportModule,
         SequenceExportKind,
     } from '../sequences/SequenceInterface'
-    import {SequenceClassDefault} from '../sequences/SequenceClassDefault'
+    import {SequenceDefault} from '../sequences/SequenceDefault'
     export default defineComponent({
         name: 'SequenceMenu',
         props: {
@@ -94,7 +94,6 @@
                 isInstance: boolean,
                 activeSeq: SequenceExportModule
             ) {
-                console.log(activeSeq)
                 if (isInstance) {
                     // instances are already constructed
                     this.liveSequence =
@@ -127,9 +126,7 @@
             return {
                 showModal: false,
                 instanceKind: SequenceExportKind.INSTANCE,
-                liveSequence: new SequenceClassDefault(
-                    0
-                ) as SequenceInterface,
+                liveSequence: new SequenceDefault(0) as SequenceInterface,
                 loadingInstance: false,
                 errors: [] as string[],
             }

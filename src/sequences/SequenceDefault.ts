@@ -1,17 +1,14 @@
-import type {SequenceInterface} from './SequenceInterface'
+import type {Factorization, SequenceInterface} from './SequenceInterface'
 import {Paramable} from '../shared/Paramable'
 
 /**
  *
- * @class SequenceClassDefault
+ * @class SequenceDefault
  * a minimium working example of a sequence class that implements the interface
  * Primarily intended to be used as a base class for your own sequences.
  *
  */
-export class SequenceClassDefault
-    extends Paramable
-    implements SequenceInterface
-{
+export class SequenceDefault extends Paramable implements SequenceInterface {
     sequenceID: number
     name = 'Base'
     description = 'A Base sequence class'
@@ -65,7 +62,7 @@ export class SequenceClassDefault
      * factor anything.
      * @param {number} n the index of the entry to get the factors of
      */
-    getFactors(_n: number): [bigint, bigint][] | null {
+    getFactors(_n: number): Factorization {
         return null
     }
 }

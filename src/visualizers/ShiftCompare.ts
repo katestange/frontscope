@@ -1,4 +1,5 @@
 import p5 from 'p5'
+import {modulo} from '../shared/math'
 import {VisualizerDefault} from './VisualizerDefault'
 import type {VisualizerInterface} from '@/visualizers/VisualizerInterface'
 import {VisualizerExportModule} from '@/visualizers/VisualizerInterface'
@@ -71,16 +72,6 @@ class VizShiftCompare
         // Ensure mouse coordinates are sane.
         // Mouse coordinates look they're floats by default.
         const d = this.sketch.pixelDensity()
-        const mx = this.clip(
-            Math.round(this.sketch.mouseX),
-            0,
-            this.sketch.width
-        )
-        const my = this.clip(
-            Math.round(this.sketch.mouseY),
-            0,
-            this.sketch.height
-        )
         if (this.sketch.key == 'ArrowUp') {
             this.mod += 1n
             this.sketch.key = ''
@@ -89,8 +80,6 @@ class VizShiftCompare
             this.mod -= 1n
             this.sketch.key = ''
             this.refreshParams()
-        } else if (this.sketch.key == 'ArrowRight') {
-            console.log(console.log('MX: ' + mx + ' MY: ' + my))
         }
         // since settings.mod can be any of string | number | bool,
         // assign it here explictly to a number, to avoid type errors
@@ -99,16 +88,16 @@ class VizShiftCompare
 
         // Write to image, then to screen for speed.
         for (let x = this.seq.first; x <= xLim; x++) {
-            const xEl = this.seq.getElement(x)
+            const xResidue = modulo(this.seq.getElement(x), this.mod)
             for (let y = this.seq.first; y <= yLim; y++) {
-                const yEl = this.seq.getElement(y)
+                const yResidue = modulo(this.seq.getElement(y), this.mod)
                 for (let i = 0; i < d; i++) {
                     for (let j = 0; j < d; j++) {
                         const index =
                             ((y * d + j) * this.sketch.width * d
                                 + (x * d + i))
                             * 4
-                        if (xEl % this.mod == yEl % this.mod) {
+                        if (xResidue == yResidue) {
                             this.img.pixels[index] = 255
                             this.img.pixels[index + 1] = 255
                             this.img.pixels[index + 2] = 255

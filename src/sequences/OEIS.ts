@@ -1,24 +1,26 @@
 import type {ValidationStatus} from '../shared/ValidationStatus'
+import {modulo} from '../shared/math'
 import {SequenceExportModule, SequenceExportKind} from './SequenceInterface'
-import {SequenceCached} from './SequenceCached'
+import {Cached} from './Cached'
+import {alertMessage} from '../shared/alertMessage'
 
 import axios from 'axios'
 
 /**
  *
- * @class OEISSequenceTemplate
- * An extension of SequenceCached for getting sequences from backscope,
+ * @class OEIS
+ * An extension of Cached for getting sequences from backscope,
  * the Flask backend.
  *
  */
-export default class OEISSequenceTemplate extends SequenceCached {
+export default class OEIS extends Cached {
     name = 'OEIS Sequence Template'
     description = 'Factory for obtaining sequences from the OEIS'
     oeisSeq = true
     cacheBlock = 1000
     oeisId = ''
     givenName = ''
-    modulo = 0n
+    modulus = 0n
     params = {
         oeisId: {value: '', displayName: 'OEIS ID', required: true},
         givenName: {value: '', displayName: 'Name', required: false},
@@ -29,9 +31,9 @@ export default class OEISSequenceTemplate extends SequenceCached {
             description:
                 'How many elements to try to fetch from the database.',
         },
-        modulo: {
-            value: this.modulo,
-            displayName: 'Modulo',
+        modulus: {
+            value: this.modulus,
+            displayName: 'Modulus',
             required: false,
             description:
                 'If nonzero, take the residue of each element to this modulus.',
@@ -42,31 +44,54 @@ export default class OEISSequenceTemplate extends SequenceCached {
         super(sequenceID) // Don't know the index range yet, will fill in later
     }
 
-    async fillCache(): Promise<void> {
-        // import.meta.env is basically your configuration.
-        // It's set up by Vite automatically
-        // See https://vitejs.dev/guide/env-and-mode.html.
-        const urlPrefix = `${import.meta.env.VITE_BACKSCOPE_URL}/api/`
-        const backendUrl =
-            urlPrefix + `get_oeis_values/${this.oeisId}/${this.cacheBlock}`
-        const response = await axios.get(backendUrl)
-        this.first = Infinity
-        this.last = -Infinity
-        for (const k in response.data.values) {
-            const index = Number(k)
-            if (index < this.first) this.first = index
-            if (index > this.last) this.last = index
-            this.cache[index] = BigInt(response.data.values[k])
-            if (this.modulo) this.cache[index] %= this.modulo
-        }
-        if (this.first === Infinity) {
-            /* An empty sequence; perhaps a mistaken OEIS ID. Is there
+    /* Unlike the base Cached sequence class, we grab the entire sequence
+       at once.
+    */
+    async fillValueCache(): Promise<void> {
+        // Catch HTTP errors. (This function has multiple HTTP requests.)
+        try {
+            // import.meta.env is basically your configuration.
+            // It's set up by Vite automatically
+            // See https://vitejs.dev/guide/env-and-mode.html.
+            const urlPrefix = `${import.meta.env.VITE_BACKSCOPE_URL}/api/`
+            const backendUrl =
+                urlPrefix
+                + `get_oeis_values/${this.oeisId}/${this.cacheBlock}`
+            const response = await axios.get(backendUrl)
+            this.first = Infinity
+            this.last = -Infinity
+            for (const k in response.data.values) {
+                const index = Number(k)
+                if (index < this.first) this.first = index
+                if (index > this.last) this.last = index
+                this.cache[index] = BigInt(response.data.values[k])
+                if (this.modulus) {
+                    this.cache[index] = modulo(
+                        this.cache[index],
+                        this.modulus
+                    )
+                }
+            }
+            if (this.first === Infinity) {
+                /* An empty sequence; perhaps a mistaken OEIS ID. Is there
                any other action we should take in this case?
             */
-            this.first = 0
-            this.last = -1
-        } else {
-            // OK, now get the factors
+                this.first = 0
+                this.last = -1
+                this.cacheBlock = 0
+            }
+            this.lastValueCached = this.last
+            this.cachingValuesTo = this.last
+        } catch (e) {
+            window.alert(alertMessage(e))
+        }
+    }
+
+    async fillFactorCache(): Promise<void> {
+        // Short-circuit if sequence is empty
+        if (this.cacheBlock < 1) return
+        try {
+            const urlPrefix = `${import.meta.env.VITE_BACKSCOPE_URL}/api/`
             const factorUrl =
                 urlPrefix
                 + `get_oeis_factors/${this.oeisId}/${this.cacheBlock}`
@@ -97,9 +122,11 @@ export default class OEISSequenceTemplate extends SequenceCached {
                     }
                 }
             }
+            this.lastFactorCached = this.last
+            this.cachingFactorsTo = this.last
+        } catch (e) {
+            window.alert(alertMessage(e))
         }
-        this.lastCached = this.last
-        this.cachingTo = this.last
     }
 
     checkParameters(): ValidationStatus {
@@ -139,7 +166,7 @@ export default class OEISSequenceTemplate extends SequenceCached {
 }
 
 export const exportModule = new SequenceExportModule(
-    OEISSequenceTemplate,
+    OEIS,
     'Add OEIS Sequence',
     SequenceExportKind.GETTER
 )
