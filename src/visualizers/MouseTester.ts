@@ -11,6 +11,7 @@ class MouseTesterVisualizer extends VisualizerDefault {
     colorValuePressed = 0
     colorValueReleased = 0
     colorValueKeyPressed = 0
+    colorValueClicked = 0
     params = {}
 
     draw() {
@@ -18,17 +19,25 @@ class MouseTesterVisualizer extends VisualizerDefault {
         const offset = 10
         this.sketch.textSize(20)
 
-        this.sketch.text('press to change colour', downSet, downSet)
+        this.sketch.text('press mouse to change colour', downSet, downSet)
         this.sketch.fill(this.colorValuePressed)
         this.sketch.rect(downSet, downSet + offset, 50, 50)
 
-        this.sketch.text('release to change colour', downSet, 2 * downSet)
+        this.sketch.text(
+            'release mouse to change colour',
+            downSet,
+            2 * downSet
+        )
         this.sketch.fill(this.colorValueReleased)
         this.sketch.rect(downSet, 2 * downSet + offset, 50, 50)
 
         this.sketch.text('press key to change colour', downSet, 3 * downSet)
         this.sketch.fill(this.colorValueKeyPressed)
         this.sketch.rect(downSet, 3 * downSet + offset, 50, 50)
+
+        this.sketch.text('click mouse to change colour', downSet, 4 * downSet)
+        this.sketch.fill(this.colorValueClicked)
+        this.sketch.rect(downSet, 4 * downSet + offset, 50, 50)
     }
 
     mouseReleased() {
@@ -51,6 +60,14 @@ class MouseTesterVisualizer extends VisualizerDefault {
             this.colorValueKeyPressed = 255
         } else {
             this.colorValueKeyPressed = 0
+        }
+    }
+
+    mouseClicked() {
+        if (this.colorValueClicked === 0) {
+            this.colorValueClicked = 255
+        } else {
+            this.colorValueClicked = 0
         }
     }
 }
