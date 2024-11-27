@@ -31,6 +31,12 @@ copies of the same sequence.
 ## Parameters
 **/
 
+enum DistanceType {
+    Absolute_Difference,
+    Modular_Difference,
+    GCD,
+}
+
 const paramDesc = {
     /** md
 - width: The number of columns to display, which corresponds to the
@@ -59,6 +65,33 @@ length of the subsequence we are considering.
             if (n <= 0) status.addError('Must be positive.')
         },
     },
+    /** md
+### Distance function:  How to measure the notion of "similarity."
+
+- Absolute Distance: absolute value of distance between terms
+(brighter = closer).
+- GCD: gcd of terms (brighter = relatively larger).
+    **/
+    distance: {
+        default: DistanceType.Absolute_Distance,
+        type: ParamType.ENUM,
+        from: DistanceType,
+        displayName: 'Distance function',
+        required: true,
+    },
+    /** md
+- modulus:  for use in modular distance.
+     **/
+    modulus: {
+        default: 30n,
+        type: ParamType.BIGINT,
+        displayName: 'Modulus',
+        required: true,
+        validate: function (n: number, status: ValidationStatus) {
+            if (n <= 0) status.addError('Must be positive.')
+        },
+    },
+
     /** md
 - backgroundColor: The color used for the background.
      **/
@@ -139,11 +172,37 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
 
         // set darkness and fill
         // need a normalization other than raw gcd for alpha
-        if (s < 0n) s = -s
-        if (t < 0n) t = -t
-        const gcd = BigInt(math.biggcd(s, t))
-        const termSize = BigInt(math.bigmax(math.bigmin(s, t), 1))
-        const alpha = math.safeNumber((255n * gcd) / termSize)
+        let alpha = 0
+        const termSize = BigInt(
+            math.bigmax(math.bigmin(math.bigabs(s), math.bigabs(t)), 1)
+        )
+        if (this.distance == DistanceType.Modular_Difference) {
+            const sResidue = BigInt(math.modulo(BigInt(s), this.modulus))
+            const tResidue = BigInt(math.modulo(BigInt(t), this.modulus))
+            let diffa = math.modulo(sResidue - tResidue, this.modulus)
+            if (2n * diffa > this.modulus) diffa -= this.modulus
+            diffa = math.bigabs(diffa)
+            let diffb = math.modulo(tResidue - sResidue, this.modulus)
+            if (2n * diffa > this.modulus) diffa -= this.modulus
+            diffb = math.bigabs(diffb)
+            const diff = math.bigmin(diffa, diffb)
+            console.log(diff)
+            alpha =
+                (2 * 255 * math.safeNumber(diff))
+                / math.safeNumber(this.modulus)
+        }
+        if (this.distance == DistanceType.Absolute_Difference) {
+            const diff = math.safeNumber(math.bigabs(s - t) / termSize)
+            alpha = math.safeNumber(255 * diff)
+        }
+        if (this.distance == DistanceType.GCD) {
+            if (s < 0n) s = -s
+            if (t < 0n) t = -t
+            const gcd = BigInt(math.biggcd(s, t))
+            alpha = math.safeNumber((255n * gcd) / termSize)
+        }
+
+        // draw
         this.useFillColor.setAlpha(alpha)
         this.sketch.fill(this.useFillColor)
         this.sketch.stroke(this.useFillColor)
