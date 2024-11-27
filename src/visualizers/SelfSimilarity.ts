@@ -90,8 +90,10 @@ length of the subsequence we are considering.
         validate: function (n: number, status: ValidationStatus) {
             if (n <= 0) status.addError('Must be positive.')
         },
+        visibleDependency: 'distance',
+        visiblePredicate: (dependentValue: DistanceType) =>
+            dependentValue === DistanceType.Modular_Difference ? true : false,
     },
-
     /** md
 - backgroundColor: The color used for the background.
      **/
