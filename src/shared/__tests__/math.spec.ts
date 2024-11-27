@@ -47,10 +47,35 @@ describe('modulo', () => {
         expect(math.modulo(-7, 5)).toBe(3n)
         expect(math.modulo(-large, 100n)).toBe(7n)
         expect(math.modulo(25, 5n)).toBe(0n)
+        expect(math.modulo(0, 1n)).toBe(0n)
+        expect(math.modulo(1, 1n)).toBe(0n)
+        expect(math.modulo(-1, 1n)).toBe(0n)
     })
     it('requires a positive modulus', () => {
+        expect(() => math.modulo(77, 0)).toThrowError('Attempt')
+        expect(() => math.modulo(large, 0n)).toThrowError('Attempt')
         expect(() => math.modulo(77, -7)).toThrowError('Attempt')
         expect(() => math.modulo(-109n, -6n)).toThrowError('Attempt')
+    })
+})
+
+describe.only('biggcd', () => {
+    it('gives correct gcd on numbers & bigints', () => {
+        expect(math.biggcd(7, 28)).toBe(7n)
+        expect(math.biggcd(large, 15)).toBe(3n)
+        expect(math.biggcd(125, 15n)).toBe(5n)
+        expect(math.biggcd(99999999999999999999999999n, 900n)).toBe(9n)
+    })
+    it('deals with minus signs correctly', () => {
+        expect(math.biggcd(-25, 5)).toBe(5n)
+        expect(math.biggcd(large, -15n)).toBe(3n)
+        expect(math.biggcd(-25, -5n)).toBe(5n)
+    })
+    it('deals with zero correctly', () => {
+        expect(math.biggcd(-25, 0)).toBe(25n)
+        expect(math.biggcd(0, large)).toBe(large)
+        expect(math.biggcd(0, 0)).toBe(0n)
+        expect(math.biggcd(0, 0n)).toBe(0n)
     })
 })
 

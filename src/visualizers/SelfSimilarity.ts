@@ -134,31 +134,24 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             math.safeNumber(X),
             math.safeNumber(Y)
         )
-        // typescript didn't complain about this missing BigInt in the next line???
+        // typescript didn't complain about this missing BigInt???
         let t = this.seq.getElement(BigInt(compareIndex))
-        console.log(X, Y, s, t)
 
         // set darkness and fill
         // need a normalization other than raw gcd for alpha
-        if (s < 0n) {
-            s = -s
-        }
-        if (t < 0n) {
-            t = -t
-        }
+        if (s < 0n) s = -s
+        if (t < 0n) t = -t
         const gcd = BigInt(math.biggcd(s, t))
-        console.log(gcd)
         const termSize = BigInt(math.bigmax(math.bigmin(s, t), 1))
-        console.log(termSize)
         const alpha = math.safeNumber((255n * gcd) / termSize)
-        console.log(alpha)
         this.useFillColor.setAlpha(alpha)
         this.sketch.fill(this.useFillColor)
-        this.sketch.rect(
-            X * this.rectWidth,
-            Y * this.rectHeight,
-            this.rectWidth,
-            this.rectHeight
+        this.sketch.stroke(this.useFillColor)
+        const rad = Math.min(this.rectWidth, this.rectHeight)
+        this.sketch.circle(
+            (X + 0.5) * this.rectWidth,
+            (Y + 0.5) * this.rectHeight,
+            rad
         )
     }
 
@@ -173,8 +166,6 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
 
     setup() {
         super.setup()
-        const heightWarning = 'Running with maximum height'
-        const widthWarning = 'Running with maximum width'
 
         // We need to check if the requested dimensions fit on screen,
         // and adjust if not.
@@ -234,18 +225,13 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
     }
 
     draw() {
-        // this delay to draw is a kludge... no idea what's wrong here
-        if (this.sketch.millis() < 1000) return
-        if (!this.setBack) {
-            this.sketch.background(this.backgroundColor)
-            this.setBack = true
-        }
         if (this.i > this.useHeight * this.useWidth) {
             this.stop()
             return
         }
-        for (let j = 0; j < 400; j++) {
-            this.drawNew(this.i++)
+        for (let j = 0; j < 1000; j++) {
+            this.drawNew(this.i)
+            this.i++
         }
     }
 }
