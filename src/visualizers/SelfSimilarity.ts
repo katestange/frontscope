@@ -35,6 +35,12 @@ enum DistanceType {
     Absolute_Difference,
     Modular_Difference,
     GCD,
+    p_adic_Valuation,
+}
+
+enum StarType {
+    Circle,
+    Rectangle,
 }
 
 const paramDesc = {
@@ -46,7 +52,7 @@ length of the subsequence we are considering.
     width: {
         default: 150n,
         type: ParamType.BIGINT,
-        displayName: 'Width (subsequence length)',
+        displayName: 'Width',
         required: true,
         validate: function (n: number, status: ValidationStatus) {
             if (n <= 0) status.addError('Must be positive.')
@@ -66,17 +72,44 @@ length of the subsequence we are considering.
         },
     },
     /** md
+- shiftFormula: The formula f(n,m) used to determine the index of the term at
+position (row, column) = (m,n) which will be compared to a(n).  In other
+words, that position will compare a(f(n,m)) with a(n).  Default:
+**/
+    shiftFormula: {
+        default: new MathFormula(
+            // Note: The markdown comment closed with */ means to include code
+            // into the docs, until mkdocs reaches a comment ending with **/
+            /** md */
+            `m`
+            /* **/
+        ),
+        type: ParamType.FORMULA,
+        inputs: ['n', 'm'],
+        displayName: 'Transformation Formula (what we compare)',
+        description:
+            "A function in 'n' (column) and 'm' (row); "
+            + 'this determines the index of the term which '
+            + 'in position (m,n) will be compared to a(n).  '
+            + "Example:  'm' will compare a(n) to a(m).",
+        visibleValue: true,
+        required: false,
+    },
+
+    /** md
 ### Distance function:  How to measure the notion of "similarity."
 
-- Absolute Distance: absolute value of distance between terms
+- Modular Difference: smallest distance between residues modulo
+a specified modulus (i.e. shortest path around the mod `clock').
+- Absolute Difference: absolute value of distance between terms
 (brighter = closer).
 - GCD: gcd of terms (brighter = relatively larger).
     **/
     distance: {
-        default: DistanceType.Absolute_Distance,
+        default: DistanceType.Modular_Difference,
         type: ParamType.ENUM,
         from: DistanceType,
-        displayName: 'Distance function',
+        displayName: 'Distance function (how we compare)',
         required: true,
     },
     /** md
@@ -115,27 +148,48 @@ length of the subsequence we are considering.
         visibleValue: true,
     },
     /** md
-- shiftFormula: The formula f(n,m) used to determine the index of the term at
-position (row, column) = (m,n) which will be compared to a(n).  In other
-words, that position will compare a(f(n,m)) with a(n).
-**/
-    shiftFormula: {
+- Opacity Control:  override in-built opacity function.
+     **/
+    opacityControl: {
+        default: false,
+        type: ParamType.BOOLEAN,
+        displayName: 'Opacity control',
+        required: true,
+    },
+    /** md
+- Opacity Adjustment:  this is a function of s and t (the two terms
+being compared) and d (the distance between them) to opacity
+(between 0 = transparent and 1 = opaque).  This can be used
+to define your own distance function in terms of s and t, for
+example, try `isPrime(s^2+t^2)` to see which pairs of terms
+have a prime sum of squares.  Default:
+     **/
+    opacityFormula: {
         default: new MathFormula(
-            // Note: The markdown comment closed with */ means to include code
-            // into the docs, until mkdocs reaches a comment ending with **/
             /** md */
-            `n+m`
+            `(d % 255)/255`
             /* **/
         ),
         type: ParamType.FORMULA,
-        inputs: ['n', 'm'],
-        displayName: 'Transformation Formula',
+        displayName: 'Opacity Adjustment',
+        inputs: ['s', 't', 'd'],
         description:
-            "A function in 'n' (column) and 'm' (row); "
-            + 'this determines the index of the term which'
-            + 'in position (m,n) will be compared to a(n).',
+            "This function of the two terms ('s' and 't') "
+            + "and the distance 'd', giving an output between 0 "
+            + '(transparent) and 1 (opaque).',
+        required: true,
+        visibleDependency: 'opacityControl',
         visibleValue: true,
-        required: false,
+    },
+    /** md
+### Indicator shape:  circle or rectangle
+    **/
+    star: {
+        default: StarType.Circle,
+        type: ParamType.ENUM,
+        from: StarType,
+        displayName: 'Indicator shape',
+        required: true,
     },
 } satisfies GenericParamDescription
 
@@ -156,6 +210,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
     useBackColor = INVALID_COLOR
     setBack = false
     gain = 3.07
+    tFail = false
     i = 0
 
     drawNew(position: number) {
@@ -164,17 +219,22 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
         const Y = (position - X) / this.useWidth
 
         // the two sequence elements to compare
-        let s = this.seq.getElement(BigInt(X))
+        const s = this.seq.getElement(BigInt(X))
         const compareIndex = this.shiftFormula.compute(
             math.safeNumber(X),
             math.safeNumber(Y)
         )
-        // typescript didn't complain about this missing BigInt???
-        let t = this.seq.getElement(BigInt(compareIndex))
+        let t = s
+        this.tFail = false
+        try {
+            t = this.seq.getElement(BigInt(compareIndex))
+        } catch {
+            this.tFail = true
+        }
 
-        // set darkness and fill
-        // need a normalization other than raw gcd for alpha
+        // alpha computation
         let alpha = 0
+        let diff = 0
         const termSize = BigInt(
             math.bigmax(math.bigmin(math.bigabs(s), math.bigabs(t)), 1)
         )
@@ -187,33 +247,61 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             let diffb = math.modulo(tResidue - sResidue, this.modulus)
             if (2n * diffa > this.modulus) diffa -= this.modulus
             diffb = math.bigabs(diffb)
-            const diff = math.bigmin(diffa, diffb)
-            console.log(diff)
-            alpha =
-                (2 * 255 * math.safeNumber(diff))
-                / math.safeNumber(this.modulus)
+            diff = math.bigmin(diffa, diffb)
+            if (!this.opacityControl) {
+                alpha = math.safeNumber((2n * 255n * diff) / this.modulus)
+            }
         }
         if (this.distance == DistanceType.Absolute_Difference) {
-            const diff = math.safeNumber(math.bigabs(s - t) / termSize)
-            alpha = math.safeNumber(255 * diff)
+            diff = math.bigabs(s - t)
+            if (!this.opacityControl) {
+                alpha = math.safeNumber((255n * diff) / termSize)
+            }
         }
         if (this.distance == DistanceType.GCD) {
-            if (s < 0n) s = -s
-            if (t < 0n) t = -t
-            const gcd = BigInt(math.biggcd(s, t))
-            alpha = math.safeNumber((255n * gcd) / termSize)
+            diff = BigInt(math.biggcd(s, t))
+            if (!this.opacityControl) {
+                alpha = math.safeNumber((255n * diff) / termSize)
+            }
+        }
+        if (this.distance == DistanceType.p_adic_Valuation) {
+            diff = 0
+            // needs implementing
+            if (!this.opacityControl) {
+                alpha = 0.5
+            }
+        }
+        if (this.opacityControl) {
+            alpha =
+                this.opacityFormula.compute(
+                    math.safeNumber(s),
+                    math.safeNumber(t),
+                    math.safeNumber(diff)
+                ) * 255
         }
 
-        // draw
-        this.useFillColor.setAlpha(alpha)
-        this.sketch.fill(this.useFillColor)
-        this.sketch.stroke(this.useFillColor)
-        const rad = Math.min(this.rectWidth, this.rectHeight)
-        this.sketch.circle(
-            (X + 0.5) * this.rectWidth,
-            (Y + 0.5) * this.rectHeight,
-            rad
-        )
+        // draw (as long as both sequence indices exist)
+        if (!this.tFail) {
+            this.useFillColor.setAlpha(alpha)
+            this.sketch.fill(this.useFillColor)
+            //this.sketch.stroke(this.useFillColor)
+            if (this.star == StarType.Circle) {
+                const rad = Math.min(this.rectWidth, this.rectHeight)
+                this.sketch.circle(
+                    (X + 0.5) * this.rectWidth,
+                    (Y + 0.5) * this.rectHeight,
+                    rad
+                )
+            }
+            if (this.star == StarType.Rectangle) {
+                this.sketch.rect(
+                    X * this.rectWidth,
+                    Y * this.rectHeight,
+                    this.rectWidth,
+                    this.rectHeight
+                )
+            }
+        }
     }
 
     async presketch(size: ViewSize) {
@@ -290,7 +378,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             this.stop()
             return
         }
-        for (let j = 0; j < 1000; j++) {
+        for (let j = 0; j < 500; j++) {
             this.drawNew(this.i)
             this.i++
         }
