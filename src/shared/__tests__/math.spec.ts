@@ -59,6 +59,46 @@ describe('modulo', () => {
     })
 })
 
+describe('divides', () => {
+    it('gives true when integers divide', () => {
+        expect(math.divides(7, 5)).toBe(false)
+        expect(math.divides(large, 10)).toBe(false)
+        expect(math.divides(large - 3n, 10)).toBe(true)
+        expect(math.divides(120, 5n)).toBe(true)
+        expect(math.divides(99999999999999999999999999n, 9)).toBe(true)
+    })
+    it('handles zeroes and ones', () => {
+        expect(math.divides(large, 1)).toBe(true)
+        expect(math.divides(1, 1)).toBe(true)
+        expect(math.divides(0, 1)).toBe(true)
+        expect(math.divides(0, 0n)).toBe(true)
+        expect(math.divides(1, 0n)).toBe(false)
+        expect(math.divides(-1n, 0)).toBe(false)
+    })
+})
+
+
+const pow =
+    89907201863535854420702290135762284537312963394702682637089810488324824507n
+describe('valuation', () => {
+    it('reports the correct valuation', () => {
+        expect(math.valuation(pow, 3)).toBe(155)
+        expect(math.valuation(20, 2n)).toBe(2)
+        expect(math.valuation(300000000000000000000000000n, 3n)).toBe(1)
+    })
+    it('handles negative a', () => {
+        expect(math.valuation(-7, 5)).toBe(0)
+        expect(math.valuation(-large, 2)).toBe(0)
+        expect(math.valuation(-25, 5n)).toBe(2)
+    })
+    it('requires a big enough divisor', () => {
+        expect(() => math.modulo(77, 0)).toThrowError('Attempt')
+        expect(() => math.modulo(large, 1n)).toThrowError('Attempt')
+        expect(() => math.modulo(773, -7)).toThrowError('Attempt')
+        expect(() => math.modulo(-109n, -6n)).toThrowError('Attempt')
+    })
+})
+
 describe.only('biggcd', () => {
     it('gives correct gcd on numbers & bigints', () => {
         expect(math.biggcd(7, 28)).toBe(7n)

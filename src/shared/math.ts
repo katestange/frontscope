@@ -101,6 +101,7 @@ type ExtendedMathJs = MathJsInstance & {
     floorSqrt(n: Integer): bigint
     modulo(n: Integer, modulus: Integer): bigint
     divides(a: Integer, b: Integer): boolean
+    valuation(a: Integer, b: Integer): number
     biggcd(a: number | bigint, b: number | bigint): bigint
     powmod(n: Integer, exponent: Integer, modulus: Integer): bigint
     natlog(n: Integer): number
@@ -166,16 +167,44 @@ math.modulo = (n: Integer, modulus: Integer): bigint => {
 }
 
 /** md
-#### divides(a: number| bigint, b: number | bigint): boolean
+#### divides(a: number | bigint, b: number | bigint): boolean
 
 Returns true if and only if the integer _a_ divides (evenly into) the integer
 _b_.
 **/
 math.divides = (a: Integer, b: Integer): boolean => {
     let an = BigInt(a)
-    if (an === 0n) return b >= 0 && b <= 0
+    if (an === 0n) return b >= 0 && b <= 0 // why not b == 0?
     if (an < 0n) an = -an
     return math.modulo(b, a) === 0n
+}
+
+/** md
+#### valuation(a: number | bigint, b: number | bigint): number
+
+Returns the number of times the integer _b_ divides the integer _a_.
+The integer _b_ must exceed 1.
+If _b_ is prime, this is also known as the _b_-adic valuation of _a_.
+The returned number will be less than MAX_SAFE_INTEGER simply
+because to exceed that answer, the input _a_ would need to be at
+least 2^53 binary digits -- which would take over a thousand
+terabytes to store.
+**/
+math.valuation = (a: Integer, b: Integer): number => {
+    const bn = BigInt(b)
+    if (bn < 2) {
+        throw new RangeError(
+            `Attempt to use valuation with '
+		+ 'respect to too-small divisor ${bn}`
+        )
+    }
+    let an = BigInt(a)
+    let v = 0
+    while (math.divides(bn, an)) {
+        an = an / bn
+        v++
+    }
+    return v
 }
 
 /** md

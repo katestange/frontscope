@@ -234,7 +234,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
 
         // alpha computation
         let alpha = 0
-        let diff = 0
+        let diff = 0n
         const termSize = BigInt(
             math.bigmax(math.bigmin(math.bigabs(s), math.bigabs(t)), 1)
         )
@@ -247,13 +247,13 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             let diffb = math.modulo(tResidue - sResidue, this.modulus)
             if (2n * diffa > this.modulus) diffa -= this.modulus
             diffb = math.bigabs(diffb)
-            diff = math.bigmin(diffa, diffb)
+            diff = BigInt(math.bigmin(diffa, diffb))
             if (!this.opacityControl) {
                 alpha = math.safeNumber((2n * 255n * diff) / this.modulus)
             }
         }
         if (this.distance == DistanceType.Absolute_Difference) {
-            diff = math.bigabs(s - t)
+            diff = BigInt(math.bigabs(s - t))
             if (!this.opacityControl) {
                 alpha = math.safeNumber((255n * diff) / termSize)
             }
@@ -265,7 +265,6 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             }
         }
         if (this.distance == DistanceType.p_adic_Valuation) {
-            diff = 0
             // needs implementing
             if (!this.opacityControl) {
                 alpha = 0.5
