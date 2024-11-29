@@ -277,6 +277,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             // don't draw if can't retrieve elements
             return
         }
+	console.log('got terms', s, t)
 
         // difference and alpha computation
         let alpha = 0
@@ -309,6 +310,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             if (!this.opacityControl) {
                 alpha = math.safeNumber((255n * diff) / termSize)
             }
+	    console.log('got gcd', diff)
         }
         if (this.distance == DistanceType.Difference_of_Valuation) {
             const diffs = math.valuation(s, this.divisor)
@@ -387,6 +389,7 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
     }
 
     setup() {
+	    console.log('startup')
         super.setup()
 
         // We need to check if the requested dimensions fit on screen,
@@ -448,9 +451,11 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
         // set background
         this.sketch.background(this.backgroundColor)
         this.i = 0
+	console.log('setupdone')
     }
 
     draw() {
+	    console.log('draw', this.i)
         if (this.i > this.useHeight * this.useWidth) {
             this.stop()
             return
