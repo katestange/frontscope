@@ -15,7 +15,7 @@ style="margin-left: 1em; margin-right: 0.5em"
 />](../assets/img/ModFill/PrimeResidues.png)
 [<img src="../../assets/img/ModFill/DanceNo73.png" width="320"
 style="margin-left: 1em; margin-right: 0.5em"
-/>](../assets/img/ModFill/DanceNo73.png)
+>](../assets/img/ModFill/DanceNo73.png)
 [<img src="../../assets/img/ModFill/OEISA070826.png" width="320"
 style="margin-left: 1em; margin-right: 0.5em"
 />](../assets/img/ModFill/OEISA070826.png)
@@ -35,7 +35,8 @@ enum DistanceType {
     Absolute_Difference,
     Modular_Difference,
     GCD,
-    p_adic_Valuation,
+    Difference_of_Valuation,
+    Valuation_of_Difference,
 }
 
 enum StarType {
@@ -53,19 +54,6 @@ length of the subsequence we are considering.
         default: 150n,
         type: ParamType.BIGINT,
         displayName: 'Width',
-        required: true,
-        validate: function (n: number, status: ValidationStatus) {
-            if (n <= 0) status.addError('Must be positive.')
-        },
-    },
-    /** md
-- height: The number of rows to display.
-     **/
-    // note will be small enough to fit in a `number` when we need it to.
-    height: {
-        default: 100n,
-        type: ParamType.BIGINT,
-        displayName: 'Height',
         required: true,
         validate: function (n: number, status: ValidationStatus) {
             if (n <= 0) status.addError('Must be positive.')
@@ -104,6 +92,12 @@ a specified modulus (i.e. shortest path around the mod `clock').
 - Absolute Difference: absolute value of distance between terms
 (brighter = closer).
 - GCD: gcd of terms (brighter = relatively larger).
+- Difference of Valuation:  take valuations of the two terms,
+return difference (brighter = closer).  The valuation
+of an integer with respect to a divisor is the number
+of times the divisor divides the integer.
+- Valuation of Difference:  take valuation of difference
+(brighter = larger valuation)
     **/
     distance: {
         default: DistanceType.Modular_Difference,
@@ -111,6 +105,24 @@ a specified modulus (i.e. shortest path around the mod `clock').
         from: DistanceType,
         displayName: 'Distance function (how we compare)',
         required: true,
+    },
+    /** md
+- divisor:  for use in valuation-based differences.
+     **/
+    divisor: {
+        default: 2n,
+        type: ParamType.BIGINT,
+        displayName: 'Divisor for valuation',
+        required: true,
+        validate: function (n: number, status: ValidationStatus) {
+            if (n <= 1) status.addError('Must exceed one.')
+        },
+        visibleDependency: 'distance',
+        visiblePredicate: (dependentValue: DistanceType) =>
+            dependentValue === DistanceType.Difference_of_Valuation
+            || dependentValue === DistanceType.Valuation_of_Difference
+                ? true
+                : false,
     },
     /** md
 - modulus:  for use in modular distance.
@@ -191,6 +203,30 @@ have a prime sum of squares.  Default:
         displayName: 'Indicator shape',
         required: true,
     },
+    /** md
+- Manual height control:  override using square grid.
+     **/
+    heightControl: {
+        default: false,
+        type: ParamType.BOOLEAN,
+        displayName: 'Manual height control',
+        required: true,
+    },
+    /** md
+- height: The number of rows to display.
+     **/
+    // note will be small enough to fit in a `number` when we need it to.
+    height: {
+        default: 100n, // ideally, default to whatever is currently happening
+        type: ParamType.BIGINT,
+        displayName: 'Height',
+        required: true,
+        visibleDependency: 'heightControl',
+        visibleValue: true,
+        validate: function (n: number, status: ValidationStatus) {
+            if (n <= 0) status.addError('Must be positive.')
+        },
+    },
 } satisfies GenericParamDescription
 
 class SelfSimilarity extends P5Visualizer(paramDesc) {
@@ -210,8 +246,20 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
     useBackColor = INVALID_COLOR
     setBack = false
     gain = 3.07
-    tFail = false
     i = 0
+
+    trySafeNumber(input: bigint) {
+        let use = 0
+        try {
+            use = math.safeNumber(input)
+        } catch {
+            // should we notify the user that we are stopping?
+            console.log('not safe', input)
+            this.stop()
+            return 0
+        }
+        return use
+    }
 
     drawNew(position: number) {
         // we draw from left to right, top to bottom
@@ -219,20 +267,18 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
         const Y = (position - X) / this.useWidth
 
         // the two sequence elements to compare
-        const s = this.seq.getElement(BigInt(X))
-        const compareIndex = this.shiftFormula.compute(
-            math.safeNumber(X),
-            math.safeNumber(Y)
-        )
-        let t = s
-        this.tFail = false
+        const compareIndex = this.shiftFormula.compute(X, Y)
+        let s = 0n
+        let t = 0n
         try {
+            s = this.seq.getElement(BigInt(X))
             t = this.seq.getElement(BigInt(compareIndex))
         } catch {
-            this.tFail = true
+            // don't draw if can't retrieve elements
+            return
         }
 
-        // alpha computation
+        // difference and alpha computation
         let alpha = 0
         let diff = 0n
         const termSize = BigInt(
@@ -264,42 +310,70 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
                 alpha = math.safeNumber((255n * diff) / termSize)
             }
         }
-        if (this.distance == DistanceType.p_adic_Valuation) {
-            // needs implementing
-            if (!this.opacityControl) {
-                alpha = 0.5
+        if (this.distance == DistanceType.Difference_of_Valuation) {
+            const diffs = math.valuation(s, this.divisor)
+            const difft = math.valuation(t, this.divisor)
+            const diffnum = math.abs(diffs - difft)
+            if (!isFinite(diffs) || !isFinite(difft)) {
+                alpha = 1
+            } else {
+                diff = BigInt(diffnum)
+                const denom = BigInt(math.bigmax(
+                    BigInt(math.valuation(termSize, this.divisor)),
+                    1
+                ))
+                if (!this.opacityControl) {
+                    alpha = math.safeNumber(
+                        (255n * math.bigabs(diff)) / denom
+                    )
+                }
             }
         }
-        if (this.opacityControl) {
-            alpha =
-                this.opacityFormula.compute(
-                    math.safeNumber(s),
-                    math.safeNumber(t),
-                    math.safeNumber(diff)
-                ) * 255
+        if (this.distance == DistanceType.Valuation_of_Difference) {
+            const diffnum = math.valuation(math.bigabs(s - t), this.divisor)
+            if (!isFinite(diffnum)) {
+                alpha = 1
+            } else {
+                diff = BigInt(diffnum)
+                const denom = BigInt(math.bigmax(
+                    BigInt(math.valuation(termSize, this.divisor)),
+                    1
+                ))
+                if (!this.opacityControl) {
+                    alpha = math.safeNumber((255n * diff) / denom)
+                }
+            }
         }
 
-        // draw (as long as both sequence indices exist)
-        if (!this.tFail) {
-            this.useFillColor.setAlpha(alpha)
-            this.sketch.fill(this.useFillColor)
-            //this.sketch.stroke(this.useFillColor)
-            if (this.star == StarType.Circle) {
-                const rad = Math.min(this.rectWidth, this.rectHeight)
-                this.sketch.circle(
-                    (X + 0.5) * this.rectWidth,
-                    (Y + 0.5) * this.rectHeight,
-                    rad
-                )
-            }
-            if (this.star == StarType.Rectangle) {
-                this.sketch.rect(
-                    X * this.rectWidth,
-                    Y * this.rectHeight,
-                    this.rectWidth,
-                    this.rectHeight
-                )
-            }
+        // manual opacity control
+        if (this.opacityControl) {
+            const vars = this.opacityFormula.freevars
+            let useS = 0
+            let useT = 0
+            let useD = 0
+            if (vars.includes('s')) useS = this.trySafeNumber(s)
+            if (vars.includes('t')) useT = this.trySafeNumber(t)
+            if (vars.includes('d')) useD = this.trySafeNumber(diff)
+            alpha = this.opacityFormula.compute(useS, useT, useD) * 255
+        }
+
+        // draw
+        this.useFillColor.setAlpha(alpha)
+        this.sketch.fill(this.useFillColor)
+        if (this.star == StarType.Circle) {
+            this.sketch.circle(
+                (X + 0.5) * this.rectWidth,
+                (Y + 0.5) * this.rectHeight,
+                Math.min(this.rectWidth, this.rectHeight)
+            )
+        }
+        if (this.star == StarType.Rectangle) {
+            this.sketch.rect(
+                X * this.rectWidth,
+                Y * this.rectHeight,
+                this.rectWidth,
+                this.rectHeight
+            )
         }
     }
 
@@ -354,12 +428,16 @@ class SelfSimilarity extends P5Visualizer(paramDesc) {
             } else dimension.value = Number(dimension.param)
         })
 
-        this.useHeight = dimensions[0].value
-        this.useWidth = dimensions[1].value
-
         // Now we can calculate the cell size and set up to draw:
+        this.useWidth = dimensions[1].value
         this.rectWidth = this.sketch.width / this.useWidth
-        this.rectHeight = this.sketch.height / this.useHeight
+        if (this.heightControl) {
+            this.useHeight = dimensions[0].value
+            this.rectHeight = this.sketch.height / this.useHeight
+        } else {
+            this.rectHeight = this.rectWidth
+            this.useHeight = this.sketch.height / this.rectHeight
+        }
         this.sketch.noStroke()
         this.i = 0
 

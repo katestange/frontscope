@@ -174,9 +174,10 @@ _b_.
 **/
 math.divides = (a: Integer, b: Integer): boolean => {
     let an = BigInt(a)
-    if (an === 0n) return b >= 0 && b <= 0 // why not b == 0?
     if (an < 0n) an = -an
-    return math.modulo(b, a) === 0n
+    const bn = BigInt(b)
+    if (an == 0n) return bn >= 0 && bn <= 0 // why not b == 0?
+    return math.modulo(bn, an) === 0n
 }
 
 /** md
@@ -192,13 +193,16 @@ terabytes to store.
 **/
 math.valuation = (a: Integer, b: Integer): number => {
     const bn = BigInt(b)
-    if (bn < 2) {
+    if (bn < 2n) {
         throw new RangeError(
             `Attempt to use valuation with '
 		+ 'respect to too-small divisor ${bn}`
         )
     }
     let an = BigInt(a)
+    if (an == 0n) {
+        return +Infinity
+    }
     let v = 0
     while (math.divides(bn, an)) {
         an = an / bn
@@ -326,17 +330,18 @@ export class MathFormula {
     canonical: string
     latex: string
     mathml: string
+    freevars: string[]
     constructor(fmla: string, inputs?: string[]) {
         const parsetree = math.parse(fmla)
+        this.freevars = parsetree
+            .filter((node, path) => math.isSymbolNode(node) && path !== 'fn')
+            .map(node => (node as SymbolNode).name)
+
         if (inputs) {
             this.inputs = inputs
         } else {
             // inputs default to all free variables
-            this.inputs = parsetree
-                .filter(
-                    (node, path) => math.isSymbolNode(node) && path !== 'fn'
-                )
-                .map(node => (node as SymbolNode).name)
+            this.inputs = this.freevars
         }
         this.source = fmla
         this.canonical = parsetree.toString({parenthesis: 'auto'})
